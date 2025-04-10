@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: anilist-chart
+  name: anilist-chart
+  labels:
+    app: anilist-chart
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: anilist-chart
+  template:
+    metadata:
+      labels:
+        app: anilist-chart
+    spec:
+      containers:
+      - name: anilist-chart
+        image: registry.gitlab.com/itspacchu/containerdump:anilist-chart
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2"
+          requests:
+            memory: "1Gi"
+            cpu: "1"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: anilist-chart
+  name: anilist-chart-svc
+spec:
+  selector:
+    app: anilist-chart
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: anilist-chart
+  name: dashboard-via-cf-tunnel
+spec:
+  ingressClassName: cloudflare-tunnel
+  rules:
+  - host: api.prashantnook.in
+    http:
+      paths:
+      - path: /user
+        pathType: Prefix
+        backend:
+          service:
+            name: anilist-chart-svc
+            port:
+              number: 3000
